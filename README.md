@@ -41,26 +41,7 @@ Each message is one array, using [core deterministic CBOR encoding](https://www.
 
 `version` is `1`. `game` identifies this game and its agreed configuration and must never be reused. `roll` starts at `0` and increments for every new draw. `player` is the authenticated sender's zero-based index in the initial roster; indices remain fixed after elimination.
 
-Here is the complete schema in [CDDL](https://www.rfc-editor.org/rfc/rfc8610.html):
-
-```cddl
-message = [
-  version: 1,
-  game: bytes32,
-  roll: uint,
-  player: uint,
-  action: action
-]
-
-bytes32 = bstr .size 32
-
-action =
-    [0, commitment: bytes32]        ; COMMIT
-  / [1, share: 0..35, salt: bytes32] ; OPEN
-  / [2, rank: 0..20]                ; CLAIM
-  / [3]                            ; ACCEPT
-  / [4]                            ; CHALLENGE
-```
+The complete schema is in [protocol.cddl](protocol.cddl).
 
 `rank` indexes the agreed ranking from weakest to strongest. With Lille Meyer:
 
