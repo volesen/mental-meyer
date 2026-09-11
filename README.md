@@ -29,10 +29,10 @@ Cryptography cannot force someone to finish. Invalid required openings or refusa
 
 ## The JSON protocol messages
 
-Joining the game: players join by sending their name and a port you can connect to, to the introduction server.
+Joining the game: players join by sending their name and a ipv6 addr and port you can connect to, to the introduction server.
 
 ```
-{ "op": "join", "name": "Bob the baller", "port": 1234 }
+{ "op": "join", "name": "Bob the baller", "ipv6": "dead::beef", "port": 1234 }
 ```
 
 The introduction server will respond with join the names of all known joined players. When a new player joins, all existing players get that join message.
