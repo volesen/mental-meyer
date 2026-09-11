@@ -37,6 +37,11 @@ Joining the game: players join by sending their name and a ipv6 addr and port yo
 
 The introduction server will respond with join the names of all known joined players. When a new player joins, all existing players get that join message.
 
+When a player recieves a join message, they should make sure that there is a tcp connection to that player.
+To decide who is the host and who is the client, whoevers name is earlier in the alphabet is the host.
+
+I.e. Bob should connect to Alice, and not the other way around.
+
 The introduction server selects when the game starts, along with the join order:
 
 ```
