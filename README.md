@@ -27,59 +27,54 @@ Under the hash-commitment assumptions, one honest player's independent uniform c
 
 Cryptography cannot force someone to finish. Invalid required openings or refusal to reveal invoke an agreed forfeit policy, never a free reroll. Selective aborts can still bias which games finish. This sketch uses salted hash commitments in the random-oracle model and covers one private roll per turn.
 
-## The CBOR wire format
+## The JSON protocol messages
 
-Before play, agree on a fresh 32-byte game ID, player order, initial roller, lives, and exact rules: ranking, legal declarations, whether a claim means “exactly” or “at least,” turn progression, and penalties, including any special treatment of 32.
+Commitment: players publish the hash of a random 64-bit integer.
 
-The session must authenticate senders and give everyone the same accepted message history. How peers establish those properties is outside this application format; CBOR supplies neither.
-
-Each message is one array, using [core deterministic CBOR encoding](https://www.rfc-editor.org/rfc/rfc8949.html#section-4.2.1):
-
-```text
-[version, game, roll, player, action]
+```
+{ "op": "commit", "hash": 35019804195 }
 ```
 
-`version` is `1`. `game` identifies this game and its agreed configuration and must never be reused. `roll` starts at `0` and increments for every new draw. `player` is the authenticated sender's zero-based index in the initial roster; indices remain fixed after elimination.
+Publish: non-roller players publish their chosen number (receivers verify that the hash matches
 
-The complete schema is in [protocol.cddl](protocol.cddl).
-
-`rank` indexes the agreed ranking from weakest to strongest. With Lille Meyer:
-
-```text
-[32, 41, 42, 43, 51, 52, 53, 54, 61, 62, 63,
- 64, 65, 11, 22, 33, 44, 55, 66, 31, 21]
+```
+{ "op": "publish", "num": 1234 }
 ```
 
-Thus `[2, 20]` claims Meyer and `[2, 18]` claims a pair of sixes. To rank revealed dice, calculate `10 * max(d1, d2) + min(d1, d2)` and look up its index.
+The roller rolls their dice in secret by xor'ing all the published numbers and modulo'ing by 36
 
-Let `E(value)` mean deterministic CBOR encoding. The exact commitment is:
+The roller then declares what they rolled (may be a bluff) as a number between 0 and 35 inclusive:
 
-```text
-commitment = SHA256(E([
-  "mental-meyer/commit", 1, game, roll, player, share, salt
-]))
+```
+{ "op": "declare", "roll": 1 }
 ```
 
-The domain string is CBOR text. `game`, `salt`, and the commitment are byte strings, not hex text. Hash the entire encoded array. An `OPEN` must reproduce the sender's commitment for that game and roll.
+The roll corresponds to these dice rolls by index:
 
-Use cryptographically secure randomness. Sample each share anew; repeated values are valid. For an unbiased sampler, draw a random byte until it is below `252`, then take it modulo `36`. Generate a fresh random salt for every contribution.
+```
+[32, 41, 42, 43, 51, 52, 53, 54, 61, 62, 63, 64, 65, 11, 22, 33, 44, 55, 66, 31, 21]
+```
 
-Clients enforce this order:
+The next player then responds with either "lift" or "accept"
 
-| Phase | Required messages |
-| --- | --- |
-| Commit | One `COMMIT` from every active player. |
-| Open | One verified `OPEN` from everyone except the roller. |
-| Declare | One legal `CLAIM` from the roller. |
-| Decide | One final `ACCEPT` or `CHALLENGE` from the next player. |
-| Challenge only | One verified `OPEN` from the roller. |
+```
+{ "op": "lift" }
+```
 
-Complete each phase before advancing. Derive lives, the next roller, and challenged outcomes locally from the agreed rules; no `RESULT` message is needed.
+```
+{ "op": "accept" }
+```
 
-For interoperable clients:
+In case the next player responds with "lift", the current player must reveal their secret number.
 
-- Require exact array lengths, types, and ranges, shortest integer/length encodings, and definite lengths. Reject unknown versions/actions, maps, tags, floats, and trailing data within a message.
-- Validate the game, roll, authenticated sender, active membership, phase, and permission for each action.
-- Treat identical retransmissions as no-ops. Conflicting commitments, claims, or decisions are protocol violations.
-- Keep the roller's opening secret until a challenge. Premature disclosure is a protocol violation; rejecting a message cannot undo the leak.
-- Never recycle a roll ID or an earlier contribution. Invalid openings invoke the forfeit policy; missing messages invoke the session's abort policy.
+```
+{ "op": "lift", "num": 5678 }
+```
+
+Then all the other players check by doing the same xor-and-modulo operation. In case the rolling player has cheated, any player can broadcast a "cheat":
+
+```
+{ "op": "cheat!" }
+```
+
+
