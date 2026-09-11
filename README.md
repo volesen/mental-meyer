@@ -93,7 +93,7 @@ The next player then responds with either "lift" or "accept"
 In case the next player responds with "lift", the current player must reveal their secret number.
 
 ```
-{ "op": "lift", "num": 5678 }
+{ "op": "lifted", "num": 5678 }
 ```
 
 Then all the other players check by doing the same xor-and-modulo operation. In case the rolling player has cheated, any player can broadcast a "cheat":
