@@ -1,0 +1,16 @@
+message = [
+  version: 1,
+  game: bytes32,
+  roll: uint,
+  player: uint,
+  action: action
+]
+
+bytes32 = bstr .size 32
+
+action =
+    [0, commitment: bytes32]        ; COMMIT
+  / [1, share: 0..35, salt: bytes32] ; OPEN
+  / [2, rank: 0..20]                ; CLAIM
+  / [3]                            ; ACCEPT
+  / [4]                            ; CHALLENGE
