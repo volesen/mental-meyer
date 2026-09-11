@@ -42,6 +42,12 @@ To decide who is the host and who is the client, whoevers name is earlier in the
 
 I.e. Bob should connect to Alice, and not the other way around.
 
+Since there is a race condition between getting the "join" of a new player and them connecting to you, clients connecting to other clients must send a "hello" message as the first message.
+
+```
+{ "op": "hello", "name": "Bob the baller" }
+```
+
 The introduction server selects when the game starts, along with the join order:
 
 ```
